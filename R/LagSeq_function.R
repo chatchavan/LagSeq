@@ -108,7 +108,7 @@ LagSeq <- function(vec, ncodes=0, lag=1, merge=FALSE) {
 #' @param merge Boolean. Whether to merge the same codes appearing without interruption. Default: FALSE.
 #' @param alpha Double. cut-off level to show the result of the t-test Default: .05.
 #' @export
-#' @return Nothing. But results of comparisons will be printed.
+#' @return Descriptive statistics data frame
 #' @examples
 #' load("lagseq_example_data.Rdata")
 #' Lag_Seq_Groups(df, group=6, seq=1, codes=5)
@@ -158,7 +158,8 @@ LagSeq_Groups <- function(df,
   
   # describe first
   require(psych)
-  print(describeBy(lag_measures[, 1:(ncol(lag_measures)-2)], lag_measures$group))
+  desc_statistics <- describeBy(lag_measures[, 1:(ncol(lag_measures)-2)], lag_measures$group)
+  print(desc_statistics)
   
   # t-tests
   (groups_u = unique(groups))
@@ -175,4 +176,7 @@ LagSeq_Groups <- function(df,
       # message(cond)
     })
   }
+  
+  # return descriptive statistics
+  desc_statistics
 }
