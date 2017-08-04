@@ -106,6 +106,7 @@ LagSeq <- function(vec, ncodes=0, lag=1, merge=FALSE) {
 #' @param ncodes Integer. The number of codes (or types of events/behaviors) expected in the vector. Optional.
 #' @param lag Integer. The lag to be applied to the conversion. Default: 1, denoting converting based on immediate adjacency.
 #' @param merge Boolean. Whether to merge the same codes appearing without interruption. Default: FALSE.
+#' @param alpha Double. cut-off level to show the result of the t-test Default: .05.
 #' @export
 #' @return Nothing. But results of comparisons will be printed.
 #' @examples
@@ -114,7 +115,8 @@ LagSeq <- function(vec, ncodes=0, lag=1, merge=FALSE) {
 LagSeq_Groups <- function(df, 
                            group, seq, codes,
                            measure="freq", 
-                           ncodes=0, lag=1, merge=FALSE) {
+                           ncodes=0, lag=1, merge=FALSE,
+                           alpha = .05) {
   
   options(stringsAsFactors=FALSE)
   
@@ -164,7 +166,7 @@ LagSeq_Groups <- function(df,
     tryCatch({
       t = t.test(lag_measures[lag_measures$group == groups_u[1], c],
                  lag_measures[lag_measures$group == groups_u[2], c])
-      if(!is.na(t) && t$p.value < 0.1) {
+      if(!is.na(t) && t$p.value < alpha) {
         cat("t-test for", names(lag_measures)[c], ":\n")
         print(t)
       }
