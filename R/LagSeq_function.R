@@ -152,7 +152,7 @@ LagSeq_Groups <- function(df,
     
     groups[i] = unique(df_sub[, group])
   }
-  names(lag_measures) <- c("count", sapply(1:ncodes, function(x) paste(codes_levels[1:ncodes], codes_levels[x], sep=" -> ")))
+  names(lag_measures) <- c("count", sapply(1:ncodes, function(x) paste(codes_levels[x], codes_levels[1:ncodes], sep=" -> ")))
   lag_measures$seq = seqs
   lag_measures$group = groups
   
