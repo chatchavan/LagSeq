@@ -107,6 +107,7 @@ LagSeq <- function(vec, ncodes=0, lag=1, merge=FALSE) {
 #' @param lag Integer. The lag to be applied to the conversion. Default: 1, denoting converting based on immediate adjacency.
 #' @param merge Boolean. Whether to merge the same codes appearing without interruption. Default: FALSE.
 #' @param alpha Double. cut-off level to show the result of the t-test Default: .05.
+#' @param print.statistics If \code{TRUE}, print statistical results in the console
 #' @export
 #' @return Descriptive statistics data frame
 #' @examples
@@ -116,8 +117,8 @@ LagSeq_Groups <- function(df,
                            group, seq, codes,
                            measure="freq", 
                            ncodes=0, lag=1, merge=FALSE,
-                           alpha = .05) {
-  
+                           alpha = .05, print.statistics = FALSE) {
+
   options(stringsAsFactors=FALSE)
   
   if(is.null(ncodes) || is.na(ncodes) || ncodes == 0)
@@ -157,10 +158,11 @@ LagSeq_Groups <- function(df,
   lag_measures$group = groups
   
   # describe first
-  require(psych)
-  desc_statistics <- describeBy(lag_measures[, 1:(ncol(lag_measures)-2)], lag_measures$group)
-  print(desc_statistics)
-  
+  desc_statistics <- psych::describeBy(lag_measures[, 1:(ncol(lag_measures)-2)], lag_measures$group)
+  if (print.statistics) {
+    print(desc_statistics)
+  }
+
   # t-tests
   (groups_u = unique(groups))
   for(c in 1:(ncol(lag_measures)-2)) {
@@ -168,8 +170,10 @@ LagSeq_Groups <- function(df,
       t = t.test(lag_measures[lag_measures$group == groups_u[1], c],
                  lag_measures[lag_measures$group == groups_u[2], c])
       if(!is.na(t) && t$p.value < alpha) {
-        cat("t-test for", names(lag_measures)[c], ":\n")
-        print(t)
+        if (print.statistics) {
+          cat("t-test for", names(lag_measures)[c], ":\n")
+          print(t)
+        }
       }
     }, error=function(cond) {
       # message("Here's the original error message:")
