@@ -102,20 +102,22 @@ LagSeq <- function(vec, ncodes=0, lag=1, merge=FALSE) {
 #' @param group Index of the column representing group membership.
 #' @param seq Index of the column representing sequence membership.
 #' @param codes Index of the column representing codes.
-#' @param measure A vector containing measures to compare between two groups. Possible values include `freq`, `adr`, and `yule`.
 #' @param ncodes Integer. The number of codes (or types of events/behaviors) expected in the vector. Optional.
 #' @param lag Integer. The lag to be applied to the conversion. Default: 1, denoting converting based on immediate adjacency.
 #' @param merge Boolean. Whether to merge the same codes appearing without interruption. Default: FALSE.
 #' @param alpha Double. cut-off level to show the result of the t-test Default: .05.
 #' @param print.statistics If \code{TRUE}, print statistical results in the console
 #' @export
-#' @return Descriptive statistics data frame
+#' @return A list with the following keys: \code{freq}, \code{adr}, \code{yule}.
+#'     Each element is a list with two keys: \code{descriptive}
+#'     (descriptive statistics returned from \code{psych::describeBy}), and
+#'     \code{t} (t-test result)
+#'
 #' @examples
 #' load("lagseq_example_data.Rdata")
 #' Lag_Seq_Groups(df, group=6, seq=1, codes=5)
 LagSeq_Groups <- function(df, 
                            group, seq, codes,
-                           measure="freq", 
                            ncodes=0, lag=1, merge=FALSE,
                            alpha = .05, print.statistics = FALSE) {
 
@@ -130,29 +132,41 @@ LagSeq_Groups <- function(df,
   df[, codes] = as.integer(tmp)
   ## make sequences unique by pasting seq with group
   df[, seq] <- paste(df[, group], df[, seq], sep="_")
-  
-  lag_measures <- data.frame(rep(c(), 1 + ncodes ** 2))
+
+  lag_measures_freq <- data.frame(rep(c(), 1 + ncodes ** 2))
+  lag_measures_adr <- data.frame(rep(c(), 1 + ncodes ** 2))
+  lag_measures_yule <- data.frame(rep(c(), 1 + ncodes ** 2))
   seqs <- levels(factor(df[, seq]))
   groups = rep(NA, length(seqs))
   for(i in seq(1, length(seqs))) {
     s = seqs[i]
     df_sub <- df[df[, seq] == s, ]
-    if(nrow(df_sub) <= 1)
-      lag_measures <- rbind(lag_measures, c(1, rep(NA, ncodes ** 2)))
-    else {
+    if(nrow(df_sub) <= 1){
+      lag_measures_freq <- rbind(lag_measures_freq, c(1, rep(NA, ncodes ** 2)))
+      lag_measures_adr <- rbind(lag_measures_adr, c(1, rep(NA, ncodes ** 2)))
+      lag_measures_yule <- rbind(lag_measures_yule, c(1, rep(NA, ncodes ** 2)))
+    } else {
       matrices = LagSeq(df_sub[, codes], ncodes, lag, merge) # ncodes problematic here
       v_m = matrices$freq
       count <- sum(rowSums(v_m))
-      if(measure == "adr")
-        v_m <- matrices$adjres
-      if(measure == "yule")
-        v_m <- matrices$yulesq
-      
-      lag_measures <- rbind(lag_measures, c(count, as.vector(t(v_m))))
+      v_m_adr <- matrices$adjres
+      v_m_yule <- matrices$yulesq
+
+      lag_measures_freq <- rbind(lag_measures_freq, c(count, as.vector(t(v_m))))
+      lag_measures_adr <- rbind(lag_measures_adr, c(count, as.vector(t(v_m_adr))))
+      lag_measures_yule <- rbind(lag_measures_yule, c(count, as.vector(t(v_m_yule))))
     }
     
     groups[i] = unique(df_sub[, group])
   }
+
+  all_lag_measures <-
+    list(freq = lag_measures_freq,
+         adr = lag_measures_adr,
+         yule = lag_measures_yule)
+  all_desc_statistics <- list(freq = NULL, adr = NULL, yule = NULL)
+  for (idx in names(all_lag_measures)) {
+    lag_measures <- all_lag_measures[[idx]]
   names(lag_measures) <- c("count", sapply(1:ncodes, function(x) paste(codes_levels[x], codes_levels[1:ncodes], sep=" -> ")))
   lag_measures$seq = seqs
   lag_measures$group = groups
@@ -181,6 +195,8 @@ LagSeq_Groups <- function(df,
     })
   }
   
+  all_desc_statistics[[idx]] <- list(descriptive = desc_statistics, t = t)
+  }
   # return descriptive statistics
-  desc_statistics
+  all_desc_statistics
 }
